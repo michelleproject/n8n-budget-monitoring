@@ -15,7 +15,7 @@ Scheduled to run every Monday at 8 am. The alert is pushed to your inbox rather
 3. Writes the totals to a **Summary** sheet, updating existing category rows
 rather than duplicating them
 4. Compares each category total against its budget limit
-5. Sends an email listing every category, with `\[OVER]` and the exact overage on
+5. Sends an email listing every category, with `[OVER]` and the exact overage on
 any that breached
 
 ## Example output
@@ -23,13 +23,13 @@ any that breached
 ```
 Total spending: 4.170.000
 
-\[OVER] Health: 702.000 of 500.000 - over by 202.000 (2 transactions)
-\[OVER] Shopping: 695.000 of 500.000 - over by 195.000 (3 transactions)
-\[OVER] Subscriptions: 481.000 of 400.000 - over by 81.000 (4 transactions)
+[OVER] Health: 702.000 of 500.000 - over by 202.000 (2 transactions)
+[OVER] Shopping: 695.000 of 500.000 - over by 195.000 (3 transactions)
+[OVER] Subscriptions: 481.000 of 400.000 - over by 81.000 (4 transactions)
 Groceries: 736.000 of 800.000 (3 transactions)
 Transport: 598.000 of 600.000 (5 transactions)
 Utilities: 568.000 of 600.000 (2 transactions)
-Food \& Drink: 390.000 of 500.000 (5 transactions)
+Food & Drink: 390.000 of 500.000 (5 transactions)
 
 Over budget: Health, Shopping, Subscriptions
 ```
@@ -74,7 +74,7 @@ const budgets = {
   "Transport": 600000,
   "Utilities": 600000,
   "Subscriptions": 400000,
-  "Food \& Drink": 500000
+  "Food & Drink": 500000
 };
 ```
 
@@ -85,7 +85,7 @@ Names must match the Category column exactly. A mismatch produces a
 
 **Requires:** n8n, Google Sheets OAuth credential, Gmail OAuth credential.
 
-1. Import `budgeting\_workflow.json` into n8n
+1. Import `budgeting_workflow.json` into n8n
 2. Reconnect the Google Sheets and Gmail credentials
 3. Create a spreadsheet with the two tabs described above
 4. Point both Google Sheets nodes at your spreadsheet
