@@ -4,7 +4,7 @@ An n8n workflow that reads transactions from Google Sheets, aggregates spending 
 category, compares each category against its limit, and emails a summary that
 flags every overage.
 
-Scheduled to run every Monday at 8am. The alert is pushed to your inbox rather than pulled from a dashboard.
+Scheduled to run every Monday at 8 am. The alert is pushed to your inbox rather than pulled from a dashboard.
 
 
 
