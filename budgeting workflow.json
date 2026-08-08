@@ -1,0 +1,281 @@
+{
+  "name": "budgeting workflow - google sheet",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        96
+      ],
+      "id": "10074574-ce5f-468a-9e35-e3f77c0f7cfa",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1ofp14mq4yOyc20383MEDXQ__k31AxORIaNVpDZlTl2E",
+          "mode": "list",
+          "cachedResultName": "Budgeting Workflow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ofp14mq4yOyc20383MEDXQ__k31AxORIaNVpDZlTl2E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 430720359,
+          "mode": "list",
+          "cachedResultName": "Summary",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ofp14mq4yOyc20383MEDXQ__k31AxORIaNVpDZlTl2E/edit#gid=430720359"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Category": "={{ $json.Category }}",
+            "Total": "={{ $json.Total }}",
+            "Transaction Count": "={{ $json[\"Transaction Count\"] }}"
+          },
+          "matchingColumns": [
+            "Category"
+          ],
+          "schema": [
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Transaction Count",
+              "displayName": "Transaction Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        560,
+        64
+      ],
+      "id": "856cbca2-6ac4-4a3b-8fbb-70a6146e8824",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ly0P0cVSWRzHsJqM",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/1ofp14mq4yOyc20383MEDXQ__k31AxORIaNVpDZlTl2E/edit?usp=drivesdk",
+          "__regex": "https:\\/\\/(?:drive|docs)\\.google\\.com(?:\\/.*|)\\/d\\/([0-9a-zA-Z\\-_]+)(?:\\/.*|)"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Transactions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ofp14mq4yOyc20383MEDXQ__k31AxORIaNVpDZlTl2E/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        160,
+        48
+      ],
+      "id": "1870af7f-eb53-476c-b8ec-63e78c37eb34",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ly0P0cVSWRzHsJqM",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -112,
+        -176
+      ],
+      "id": "6cd11baa-7a61-4e6e-835d-7217745e697f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const budgets = {\n  \"Groceries\": 800000,\n  \"Health\": 500000,\n  \"Shopping\": 500000,\n  \"Transport\": 600000,\n  \"Utilities\": 600000,\n  \"Subscriptions\": 400000,\n  \"Food & Drink\": 500000\n};\n\nconst rows = $('Aggregate by category').all().map(i => i.json);\n\nconst overBudget = [];\nconst lines = [];\n\nfor (const row of rows) {\n  const limit = budgets[row.Category];\n  const total = Number(row.Total) || 0;\n  const count = row[\"Transaction Count\"];\n\n  if (limit && total > limit) {\n    overBudget.push(row.Category);\n    lines.push(`[OVER] ${row.Category}: ${total.toLocaleString('id-ID')} of ${limit.toLocaleString('id-ID')} - over by ${(total - limit).toLocaleString('id-ID')} (${count} transactions)`);\n  } else if (!limit) {\n    lines.push(`${row.Category}: ${total.toLocaleString('id-ID')} (NO LIMIT SET)`);\n  } else {\n    lines.push(`${row.Category}: ${total.toLocaleString('id-ID')} of ${limit.toLocaleString('id-ID')} (${count} transactions)`);\n  }\n}\n\nconst grandTotal = rows.reduce((sum, r) => sum + (Number(r.Total) || 0), 0);\n\nconst subject = overBudget.length\n  ? `Budget alert: ${overBudget.length} categor${overBudget.length === 1 ? 'y' : 'ies'} over limit`\n  : `Weekly budget summary - everything within limit`;\n\nconst body = [\n  `Total spending: ${grandTotal.toLocaleString('id-ID')}`,\n  '',\n  ...lines,\n  '',\n  overBudget.length ? `Over budget: ${overBudget.join(', ')}` : 'Nothing over budget this period.'\n].join('\\n');\n\nreturn [{ json: { subject, body, overBudgetCount: overBudget.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        -112
+      ],
+      "id": "a6d1bc92-ab50-4f30-8f1a-59395691995d",
+      "name": "Check budget limits"
+    },
+    {
+      "parameters": {
+        "jsCode": "const totals = {};\n\nfor (const item of $input.all()) {\n  const category = item.json.Category?.trim();\n  const amount = Number(item.json.Amount) || 0;\n  if (!category) continue;\n\n  if (!totals[category]) {\n    totals[category] = { Category: category, Total: 0, \"Transaction Count\": 0 };\n  }\n  totals[category].Total += amount;\n  totals[category][\"Transaction Count\"] += 1;\n}\n\nreturn Object.values(totals)\n  .sort((a, b) => b.Total - a.Total)\n  .map(json => ({ json }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        -96
+      ],
+      "id": "c7d22679-9c0c-4ff9-894b-f1a16dd1e5d6",
+      "name": "Aggregate by category"
+    },
+    {
+      "parameters": {
+        "sendTo": "your-email@example.com",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        80
+      ],
+      "id": "f32d79b1-494a-4b4a-a1d5-e2065fd6c28e",
+      "name": "Send a message",
+      "webhookId": "50be8d84-74e1-4d5e-b4ca-b1ade54603ee",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "VGI6SmgkdgYE7Me5",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Check budget limits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Aggregate by category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate by category": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check budget limits": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7cb330bd-126f-4f76-8701-7f62b082969d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f2e4b1515c746b02518a5db20f67c511026a54f44e6079f28bcfe8eaf4f03d70"
+  },
+  "nodeGroups": [],
+  "id": "cS7dfeuRJPeFBtRw",
+  "tags": []
+}
