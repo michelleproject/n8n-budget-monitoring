@@ -1,0 +1,265 @@
+{
+  "name": "budgeting workflow - NTD",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        240
+      ],
+      "id": "b6dc8500-e367-41b6-ba35-d4798b74661a",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                3
+              ],
+              "triggerAtHour": 22,
+              "triggerAtMinute": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -480,
+        432
+      ],
+      "id": "da4e6283-ed35-4a4f-92d0-091103a395f0",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const totals = {};\n\nfor (const item of $input.all()) {\n  const category = item.json.類別?.trim();\n  const amount = Number(item.json.金額) || 0;\n  if (!category) continue;\n\n  if (!totals[category]) {\n    totals[category] = { 類別: category, 總金額: 0, \"交易筆數\": 0 };\n  }\n  totals[category].總金額 += amount;\n  totals[category][\"交易筆數\"] += 1;\n}\n\nreturn Object.values(totals)\n  .sort((a, b) => b.總金額 - a.總金額)\n  .map(json => ({ json }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        336
+      ],
+      "id": "c2abaabb-8a09-461d-a852-8913a89e2de0",
+      "name": "Aggregate by category"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1RKqOEWXb35GwOMztas9_WhPZB6-6ZXEjkzN2hZ1JS14",
+          "mode": "list",
+          "cachedResultName": "預算追蹤 [NTD]",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1RKqOEWXb35GwOMztas9_WhPZB6-6ZXEjkzN2hZ1JS14/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 648238088,
+          "mode": "list",
+          "cachedResultName": "摘要",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1akaIjmvmpjdrfCWCcK-x7-r-YrOx4ZxVf0NowSWYdCc/edit#gid=648238088"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "類別": "={{$json.類別}}",
+            "總金額": "={{$json.總金額}}",
+            "交易筆數": "={{$json.交易筆數}}"
+          },
+          "matchingColumns": [
+            "類別"
+          ],
+          "schema": [
+            {
+              "id": "類別",
+              "displayName": "類別",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "總金額",
+              "displayName": "總金額",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "交易筆數",
+              "displayName": "交易筆數",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        192,
+        336
+      ],
+      "id": "2781e42b-d7c6-4a24-8425-86387f42e2b6",
+      "name": "Append or update NTD Summary row in sheet"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1RKqOEWXb35GwOMztas9_WhPZB6-6ZXEjkzN2hZ1JS14/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "交易紀錄",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1RKqOEWXb35GwOMztas9_WhPZB6-6ZXEjkzN2hZ1JS14/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -256,
+        336
+      ],
+      "id": "132ee376-9656-49fd-b7b9-80f5bd60b8dd",
+      "name": "Get NTD row(s) in sheet"
+    },
+    {
+      "parameters": {
+        "jsCode": "const budgets = {\n  \"Groceries\": 1200,\n  \"Health\": 500,\n  \"Shopping\": 1500,\n  \"Transport\": 150,\n  \"Utilities\": 1200,\n  \"Subscriptions\": 300,\n  \"Food & Drink\": 400,\n  \"Entertainment\": 1000\n};\n\nconst rows = $('Aggregate by category').all().map(i => i.json);\n\nconst overBudget = [];\nconst lines = [];\nconst formatTwd = amount => `NT$${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(amount)}`;\n\nfor (const row of rows) {\n  const limit = budgets[row.類別];\n  const total = Number(row.總金額) || 0;\n  const count = row[\"交易筆數\"];\n\n  if (limit && total > limit) {\n    overBudget.push(row.類別);\n    lines.push(`[OVER] ${row.類別}: ${formatTwd(total)} of ${formatTwd(limit)} - over by ${formatTwd(total - limit)} (${count} transactions)`);\n  } else if (!limit) {\n    lines.push(`${row.類別}: ${formatTwd(total)} (NO LIMIT SET)`);\n  } else {\n    lines.push(`${row.類別}: ${formatTwd(total)} of ${formatTwd(limit)} (${count} transactions)`);\n  }\n}\n\nconst grandTotal = rows.reduce((sum, r) => sum + (Number(r.總金額) || 0), 0);\n\nconst subject = overBudget.length\n  ? `Budget alert: ${overBudget.length} categor${overBudget.length === 1 ? 'y' : 'ies'} over limit`\n  : `Weekly budget summary - everything within limit`;\n\nconst body = [\n  `Total spending: ${formatTwd(grandTotal)}`,\n  '',\n  ...lines,\n  '',\n  overBudget.length ? `Over budget: ${overBudget.join(', ')}` : 'Nothing over budget this period.'\n].join('\\n');\n\nreturn [{ json: { subject, body, overBudgetCount: overBudget.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        336
+      ],
+      "id": "9d1a9a9b-b368-4354-9b9f-7fd109ea4087",
+      "name": "Check NTD budget limits"
+    },
+    {
+      "parameters": {
+        "sendTo": "youremail@example.com",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        336
+      ],
+      "id": "03892d65-d303-4100-a7e7-def3e308376c",
+      "name": "Send alert via gmail",
+      "webhookId": "609861e2-7f1a-4537-a892-4aad7118c2cd"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get NTD row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate by category": {
+      "main": [
+        [
+          {
+            "node": "Append or update NTD Summary row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get NTD row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update NTD Summary row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Check NTD budget limits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get NTD row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Aggregate by category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check NTD budget limits": {
+      "main": [
+        [
+          {
+            "node": "Send alert via gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "06fc1ef1-3de2-4dd2-b5f6-f1a1c9068a96",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f2e4b1515c746b02518a5db20f67c511026a54f44e6079f28bcfe8eaf4f03d70"
+  },
+  "nodeGroups": [],
+  "id": "6C6SEOid4CQIVkP6",
+  "tags": []
+}
